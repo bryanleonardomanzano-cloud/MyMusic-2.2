@@ -152,16 +152,26 @@ class GoogleDriveRepository implements GoogleDriveDataSource {
 
   /// Mapea un archivo de la API de Google Drive a GoogleDriveFile
   GoogleDriveFile _mapToGoogleDriveFile(Map<String, dynamic> file) {
+    final rawSize = file['size'];
+    int size = 0;
+    if (rawSize is int) {
+      size = rawSize;
+    } else if (rawSize is num) {
+      size = rawSize.toInt();
+    } else if (rawSize is String) {
+      size = int.tryParse(rawSize) ?? 0;
+    }
+
     return GoogleDriveFile(
       id: file['id'] as String? ?? '',
       name: file['name'] as String? ?? 'Sin nombre',
       mimeType: file['mimeType'] as String? ?? 'application/octet-stream',
-      size: (file['size'] as num?)?.toInt() ?? 0,
+      size: size,
       createdTime: file['createdTime'] != null
-          ? DateTime.parse(file['createdTime'] as String)
+          ? DateTime.tryParse(file['createdTime'] as String) ?? DateTime.now()
           : DateTime.now(),
       modifiedTime: file['modifiedTime'] != null
-          ? DateTime.parse(file['modifiedTime'] as String)
+          ? DateTime.tryParse(file['modifiedTime'] as String) ?? DateTime.now()
           : DateTime.now(),
       downloadUrl: file['webViewLink'] as String?,
     );
