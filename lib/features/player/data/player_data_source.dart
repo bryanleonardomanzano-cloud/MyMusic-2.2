@@ -14,6 +14,8 @@ abstract class PlayerDataSource {
     required int duration,
     required List<String> playlist,
     int initialPosition = 0,
+    String? sourceUrl,
+    Map<String, String>? headers,
   });
 
   /// Toggle pause/resume

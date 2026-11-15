@@ -20,6 +20,8 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
     required int duration,
     required List<String> playlist,
     int initialPosition = 0,
+    String? sourceUrl,
+    Map<String, String>? headers,
   }) async {
     state = PlayerState.initial;
     final newState = await _dataSource.loadTrack(
@@ -29,6 +31,8 @@ class PlayerNotifier extends StateNotifier<PlayerState> {
       duration: duration,
       playlist: playlist,
       initialPosition: initialPosition,
+      sourceUrl: sourceUrl,
+      headers: headers,
     );
     state = newState;
   }

@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mymusic/features/auth/domain/auth_state.dart';
 import 'package:mymusic/features/auth/presentation/providers.dart';
+import 'package:mymusic/features/google_drive/domain/google_drive_state.dart';
 import 'package:mymusic/features/google_drive/presentation/google_drive_providers.dart';
 import 'package:mymusic/features/library/presentation/library_providers.dart';
+import 'package:mymusic/features/player/presentation/player_providers.dart';
+import 'package:mymusic/features/ui_shell/presentation/ui_shell_providers.dart';
 
 class LibraryTabPage extends ConsumerWidget {
   const LibraryTabPage({super.key});
@@ -178,6 +181,40 @@ class _GoogleDriveSection extends ConsumerWidget {
             subtitle: Text(
               '${file.mimeType}${file.size > 0 ? ' • ${formatSize(file.size)}' : ''}',
             ),
+            trailing: const Icon(Icons.play_arrow),
+            onTap: () async {
+              final token = auth.accessToken;
+              if (token.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No hay token de acceso para reproducir.'),
+                  ),
+                );
+                return;
+              }
+
+              final url =
+                  'https://www.googleapis.com/drive/v3/files/${file.id}?alt=media';
+              await ref.read(playerNotifierProvider.notifier).loadTrack(
+                    trackId: file.id,
+                    title: file.name,
+                    artist: 'Google Drive',
+                    duration: 0,
+                    playlist: [file.id],
+                    sourceUrl: url,
+                    headers: {'Authorization': 'Bearer $token'},
+                  );
+
+              final shellState = ref.read(uiShellNotifierProvider);
+              final playerIndex = shellState.tabs.indexWhere(
+                (tab) => tab.id == 'player',
+              );
+              if (playerIndex >= 0) {
+                ref
+                    .read(uiShellNotifierProvider.notifier)
+                    .changeTab(playerIndex);
+              }
+            },
           ),
         );
       }).toList(),
