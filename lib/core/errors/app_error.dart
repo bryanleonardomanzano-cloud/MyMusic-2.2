@@ -12,7 +12,10 @@ class AppError {
       AppError('unknown', message);
 
   @override
-  String toString() => 'AppError($code): $message';
+  String toString() {
+    if (extra == null) return 'AppError($code): $message';
+    return 'AppError($code): $message ($extra)';
+  }
 }
 
 /// Monádica de resultados: Success o Failure.

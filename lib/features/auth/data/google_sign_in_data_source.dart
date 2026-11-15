@@ -40,8 +40,8 @@ class GoogleSignInDataSource implements AuthRepository {
       );
       final expiration = _computeExpiration(accessToken);
       return AuthAuthenticated(user, accessToken, expiration);
-    } on Exception catch (e) {
-      return AuthError(networkError('loginWithGoogle', e.toString()));
+    } catch (e) {
+      return AuthError(authError('loginWithGoogle', e.toString()));
     }
   }
 
