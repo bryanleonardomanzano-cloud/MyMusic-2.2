@@ -45,6 +45,7 @@ class WindowsGoogleAuth {
     'openid',
     'email',
     'profile',
+    'https://www.googleapis.com/auth/drive.readonly',
   ];
 
   static bool get isConfigured => _clientId.isNotEmpty;
