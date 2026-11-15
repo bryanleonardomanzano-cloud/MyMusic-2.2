@@ -19,6 +19,7 @@ dependencies:
   googleapis: ^11.3.0
   googleapis_auth: ^1.2.0
   http: ^1.2.1
+  url_launcher: ^6.3.0
   just_audio: ^0.9.35
   audio_service: ^0.18.12
   audioplayers: ^6.1.0

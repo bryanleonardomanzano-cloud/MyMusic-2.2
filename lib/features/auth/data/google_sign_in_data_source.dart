@@ -12,6 +12,7 @@ import 'package:mymusic/core/errors/app_error.dart';
 import 'package:mymusic/features/auth/domain/auth_state.dart';
 import 'package:mymusic/features/auth/domain/auth_user.dart';
 import 'package:mymusic/features/auth/domain/auth_repository.dart';
+import 'package:mymusic/features/auth/data/windows_google_auth.dart';
 
 class GoogleSignInDataSource implements AuthRepository {
   final _googleSignIn = GoogleSignIn(
@@ -29,6 +30,10 @@ class GoogleSignInDataSource implements AuthRepository {
 
   @override
   Future<AuthState> loginWithGoogle() async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
+      return WindowsGoogleAuth.signIn();
+    }
+
     if (!_supportsGoogleSignIn) {
       return AuthError(authError(
         'loginWithGoogle',
@@ -79,13 +84,18 @@ class GoogleSignInDataSource implements AuthRepository {
   @override
   Future<AuthState> logout() async {
     try {
-      await _googleSignIn.disconnect();
+      if (kIsWeb ||
+          defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS) {
+        await _googleSignIn.disconnect();
+      }
       // Limpiamos los tokens guardados
       final prefs = await _prefs;
       await prefs.remove('refresh_token');
       await prefs.clear();
       return AuthUninitialized();
-    } on Exception catch (e) {
+    } catch (e) {
       return AuthError(offlineError('logout', e.toString()));
     }
   }
