@@ -3,6 +3,8 @@
 /// Versión simplificada: solo loginWithGoogle y logout; watchSession y refreshToken son placeholders.
 library mymusic.features.auth.data.google_sign_in_data_source;
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,8 +20,23 @@ class GoogleSignInDataSource implements AuthRepository {
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
 
+  bool get _supportsGoogleSignIn {
+    if (kIsWeb) return true;
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+  }
+
   @override
   Future<AuthState> loginWithGoogle() async {
+    if (!_supportsGoogleSignIn) {
+      return AuthError(authError(
+        'loginWithGoogle',
+        'El inicio de sesión con Google no está disponible en esta plataforma '
+            'con la configuración actual. Usa "Continuar sin iniciar sesión".',
+      ));
+    }
+
     try {
       final account = await _googleSignIn.signIn();
       if (account == null) return AuthUninitialized();
@@ -30,7 +47,10 @@ class GoogleSignInDataSource implements AuthRepository {
 
       // Validación nula segura - si no hay accessToken, es error
       if (accessToken == null) {
-        return AuthUninitialized();
+        return AuthError(authError(
+          'loginWithGoogle',
+          'No se pudo obtener el token de acceso de Google.',
+        ));
       }
 
       final user = AuthUser(
@@ -40,6 +60,17 @@ class GoogleSignInDataSource implements AuthRepository {
       );
       final expiration = _computeExpiration(accessToken);
       return AuthAuthenticated(user, accessToken, expiration);
+    } on MissingPluginException {
+      return AuthError(authError(
+        'loginWithGoogle',
+        'El inicio de sesión con Google no está disponible en esta plataforma. '
+            'Usa "Continuar sin iniciar sesión".',
+      ));
+    } on PlatformException catch (e) {
+      return AuthError(authError(
+        'loginWithGoogle',
+        e.message ?? e.code,
+      ));
     } catch (e) {
       return AuthError(authError('loginWithGoogle', e.toString()));
     }
