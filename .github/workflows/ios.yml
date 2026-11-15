@@ -30,22 +30,27 @@ jobs:
       - name: Build unsigned IPA (iPhone/arm64)
         run: flutter build ipa --release --no-codesign
 
-      - name: Prepare artifact
+      - name: Prepare artifact for Xcode signing
         run: |
+          set -e
           mkdir -p artifact
-          cp -R build/ios/archive/Runner.xcarchive artifact/Runner.xcarchive || true
+          if [ -d build/ios/archive/Runner.xcarchive ]; then
+            ditto -c -k --sequesterRsrc --keepParent build/ios/archive/Runner.xcarchive artifact/Runner.xcarchive.zip
+            echo "Included Runner.xcarchive.zip"
+          fi
           if ls build/ios/ipa/*.ipa 1> /dev/null 2>&1; then
             cp build/ios/ipa/*.ipa artifact/
+            echo "Included unsigned IPA"
           fi
-          # Fallback: empaquetar Runner.app si no se generó .ipa
-          if [ ! -f artifact/*.ipa ] && [ -d build/ios/iphoneos/Runner.app ]; then
+          # Fallback: empaquetar Runner.app si no se generó .ipa/.xcarchive
+          if [ ! -f artifact/Runner.xcarchive.zip ] && [ ! -f artifact/*.ipa ] && [ -d build/ios/iphoneos/Runner.app ]; then
             ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app artifact/Runner-app.zip
           fi
 
-      - name: Upload iOS artifact
+      - name: Upload iOS artifact (Xcode)
         uses: actions/upload-artifact@v4
         with:
-          name: MyMusic-iOS-unsigned
+          name: MyMusic-iOS-unsigned-xcode
           path: artifact
           if-no-files-found: error
           retention-days: 14
