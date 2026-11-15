@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mymusic/features/auth/domain/auth_state.dart';
+import 'package:mymusic/features/auth/domain/auth_user.dart';
 import 'package:mymusic/features/auth/presentation/providers.dart';
 
 class ProfileTabPage extends ConsumerWidget {
@@ -9,7 +11,13 @@ class ProfileTabPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final user = authState.user;
+
+    final AuthUser? user =
+        authState is AuthAuthenticated ? authState.user : null;
+    final bool isAuthenticated = authState is AuthAuthenticated;
+    final bool isInitial = authState is AuthInitial;
+    final String? errorText =
+        authState is AuthError ? authState.error.toString() : null;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -32,7 +40,7 @@ class ProfileTabPage extends ConsumerWidget {
         ),
         if (user?.email != null)
           Text(
-            user!.email!,
+            user!.email,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
@@ -44,25 +52,25 @@ class ProfileTabPage extends ConsumerWidget {
                 leading: const Icon(Icons.cloud),
                 title: const Text('Google Drive'),
                 subtitle: Text(
-                  user != null ? 'Conectado' : 'No conectado',
+                  isAuthenticated ? 'Conectado' : 'No conectado',
                 ),
               ),
               const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: const Text('Acerca de MyMusic'),
-                subtitle: const Text('Versión de aplicación'),
+              const ListTile(
+                leading: Icon(Icons.info_outline),
+                title: Text('Acerca de MyMusic'),
+                subtitle: Text('Versión de aplicación'),
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        if (authState.isLoading)
+        if (isInitial)
           const Center(child: CircularProgressIndicator())
-        else if (user != null)
+        else if (isAuthenticated)
           FilledButton.icon(
             onPressed: () async {
-              await ref.read(authProvider.notifier).signOut();
+              await ref.read(authProvider.notifier).logout();
             },
             icon: const Icon(Icons.logout),
             label: const Text('Cerrar sesión'),
@@ -70,15 +78,15 @@ class ProfileTabPage extends ConsumerWidget {
         else
           FilledButton.icon(
             onPressed: () async {
-              await ref.read(authProvider.notifier).signIn();
+              await ref.read(authProvider.notifier).login();
             },
             icon: const Icon(Icons.login),
             label: const Text('Iniciar sesión'),
           ),
-        if (authState.errorMessage != null) ...[
+        if (errorText != null) ...[
           const SizedBox(height: 12),
           Text(
-            authState.errorMessage!,
+            errorText,
             style: TextStyle(color: Theme.of(context).colorScheme.error),
             textAlign: TextAlign.center,
           ),
